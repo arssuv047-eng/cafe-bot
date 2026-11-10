@@ -219,6 +219,15 @@ class ConversationTests(unittest.TestCase):
         for text in ["❌ Отмена", "отмена", "ОТМЕНА"]:
             self.assertRegex(text, bot.CANCEL_FILTER.pattern)
 
+    def test_network_error_is_short_warning(self):
+        from telegram.error import TimedOut
+
+        ctx = SimpleNamespace(error=TimedOut())
+        with self.assertLogs("cafe-bot", level="WARNING") as logs:
+            asyncio.run(bot.on_error(None, ctx))
+        self.assertEqual(logs.records[0].levelname, "WARNING")
+        self.assertIsNone(logs.records[0].exc_info)
+
     def test_app_builds_without_network(self):
         app = bot.build_app(Config(bot_token="123456:TEST", admin_id=999))
         self.assertEqual(len(app.handlers[0]), 8)

@@ -9,7 +9,7 @@ from telegram import (
     Update,
 )
 from telegram.constants import ParseMode
-from telegram.error import TelegramError
+from telegram.error import NetworkError, TelegramError
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -256,11 +256,31 @@ async def book_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     return ConversationHandler.END
 
 
+# ---------- Ошибки ----------
+
+async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    err = context.error
+    if isinstance(err, NetworkError):
+        # Сбой связи с Telegram (таймаут, обрыв). Бот продолжит работу сам.
+        log.warning("Проблема со связью с Telegram: %s", err)
+        return
+    log.error("Необработанная ошибка", exc_info=err)
+
+
 # ---------- Сборка приложения ----------
 
 def build_app(config: Config) -> Application:
-    app = Application.builder().token(config.bot_token).build()
+    app = (
+        Application.builder()
+        .token(config.bot_token)
+        # Запас по времени на медленную сеть (по умолчанию 5 секунд).
+        .connect_timeout(20)
+        .read_timeout(20)
+        .write_timeout(20)
+        .build()
+    )
     app.bot_data["config"] = config
+    app.add_error_handler(on_error)
 
     booking_conv = ConversationHandler(
         entry_points=[
