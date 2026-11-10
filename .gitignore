@@ -1,0 +1,20 @@
+# Секреты
+.env
+.env.*
+!.env.example
+
+# Заявки гостей (личные данные) — только локально
+bookings.json
+bookings.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
